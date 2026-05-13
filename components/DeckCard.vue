@@ -23,7 +23,7 @@ function formatDate(dateStr) {
         :src="deck.url"
         class="absolute top-0 left-0 w-[1024px] h-[768px] origin-top-left pointer-events-none"
         :style="{ transform: 'scale(' + (1/3.2) + ')' }"
-        sandbox="allow-same-origin"
+        sandbox=""
         loading="lazy"
         frameborder="0"
       />
