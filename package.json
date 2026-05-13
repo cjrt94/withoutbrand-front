@@ -1,0 +1,18 @@
+{
+  "name": "withoutbrand",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview"
+  },
+  "dependencies": {
+    "firebase": "^11.0.0"
+  },
+  "devDependencies": {
+    "nuxt": "^3.17.0",
+    "@nuxtjs/tailwindcss": "^6.13.0"
+  }
+}
