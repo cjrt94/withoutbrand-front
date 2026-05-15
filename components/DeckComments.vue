@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useFirebase } from '~/composables/useFirebase'
 
 const props = defineProps({
@@ -7,11 +7,10 @@ const props = defineProps({
   active: { type: Boolean, default: false }
 })
 
-const currentSlide = defineModel('currentSlide', { type: Number, default: 1 })
-
 const { getComments, addComment, resolveComment, deleteComment } = useFirebase()
 
 const comments = ref([])
+const currentSlide = ref(1)
 const newComment = ref(null)
 const commentText = ref('')
 const activeComment = ref(null)
@@ -19,7 +18,18 @@ const inputRef = ref(null)
 
 onMounted(async () => {
   comments.value = await getComments(props.deckId)
+  window.addEventListener('message', onSlideMessage)
 })
+
+onUnmounted(() => {
+  window.removeEventListener('message', onSlideMessage)
+})
+
+function onSlideMessage(e) {
+  if (e.data?.type === 'slide-change' && typeof e.data.slide === 'number') {
+    currentSlide.value = e.data.slide
+  }
+}
 
 // Close open comment/form when changing slides
 watch(currentSlide, () => {
@@ -31,16 +41,6 @@ watch(currentSlide, () => {
 const visibleComments = computed(() =>
   comments.value.filter(c => !c.resolved && (c.slide || 1) === currentSlide.value)
 )
-
-const totalCommentsBySlide = computed(() => {
-  const map = {}
-  for (const c of comments.value) {
-    if (c.resolved) continue
-    const s = c.slide || 1
-    map[s] = (map[s] || 0) + 1
-  }
-  return map
-})
 
 function onOverlayClick(e) {
   if (!props.active) return
@@ -117,34 +117,17 @@ function formatDate(dateStr) {
 </script>
 
 <template>
-  <!-- Slide selector bar -->
+  <!-- Current slide indicator (visible in comment mode) -->
   <div
     v-if="active"
-    class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-brand-dark/95 backdrop-blur border border-brand-border rounded-lg px-3 py-2 shadow-xl"
+    class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 bg-brand-dark/95 backdrop-blur border border-brand-border rounded-lg px-4 py-2 shadow-xl"
   >
-    <button
-      @click="currentSlide = Math.max(1, currentSlide - 1)"
-      :disabled="currentSlide <= 1"
-      class="w-7 h-7 rounded flex items-center justify-center text-brand-subtle hover:text-white hover:bg-brand-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-      </svg>
-    </button>
-    <span class="text-brand-text text-sm font-medium min-w-[80px] text-center">
+    <span class="text-brand-text text-sm font-medium">
       Slide {{ currentSlide }}
-      <span v-if="totalCommentsBySlide[currentSlide]" class="text-yellow-400 text-xs ml-1">
-        ({{ totalCommentsBySlide[currentSlide] }})
+      <span v-if="visibleComments.length" class="text-yellow-400 text-xs ml-1">
+        ({{ visibleComments.length }} comentarios)
       </span>
     </span>
-    <button
-      @click="currentSlide++"
-      class="w-7 h-7 rounded flex items-center justify-center text-brand-subtle hover:text-white hover:bg-brand-muted transition-colors"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-      </svg>
-    </button>
   </div>
 
   <!-- Overlay layer -->
