@@ -74,16 +74,18 @@ export function useFirebase() {
     return snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
   }
 
-  async function addComment(deckId, { x, y, text, author }) {
-    const docRef = await addDoc(collection(db, 'decks', deckId, 'comments'), {
+  async function addComment(deckId, { x, y, text, author, slide }) {
+    const data = {
       x,
       y,
+      slide: slide || 1,
       text,
       author: author || 'Anon',
       resolved: false,
       createdAt: new Date().toISOString()
-    })
-    return { id: docRef.id, x, y, text, author: author || 'Anon', resolved: false, createdAt: new Date().toISOString() }
+    }
+    const docRef = await addDoc(collection(db, 'decks', deckId, 'comments'), data)
+    return { id: docRef.id, ...data }
   }
 
   async function resolveComment(deckId, commentId) {
