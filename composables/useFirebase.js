@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { getFirestore, collection, addDoc, getDocs, doc, getDoc, deleteDoc, query, orderBy } from 'firebase/firestore'
+import { getFirestore, collection, addDoc, getDocs, doc, getDoc, deleteDoc, updateDoc, query, orderBy } from 'firebase/firestore'
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { useRuntimeConfig } from '#imports'
 
@@ -68,5 +68,31 @@ export function useFirebase() {
     await deleteDoc(doc(db, 'decks', id))
   }
 
-  return { uploadDeck, getDecks, getDeck, deleteDeck }
+  async function getComments(deckId) {
+    const q = query(collection(db, 'decks', deckId, 'comments'), orderBy('createdAt', 'asc'))
+    const snapshot = await getDocs(q)
+    return snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+  }
+
+  async function addComment(deckId, { x, y, text, author }) {
+    const docRef = await addDoc(collection(db, 'decks', deckId, 'comments'), {
+      x,
+      y,
+      text,
+      author: author || 'Anon',
+      resolved: false,
+      createdAt: new Date().toISOString()
+    })
+    return { id: docRef.id, x, y, text, author: author || 'Anon', resolved: false, createdAt: new Date().toISOString() }
+  }
+
+  async function resolveComment(deckId, commentId) {
+    await updateDoc(doc(db, 'decks', deckId, 'comments', commentId), { resolved: true })
+  }
+
+  async function deleteComment(deckId, commentId) {
+    await deleteDoc(doc(db, 'decks', deckId, 'comments', commentId))
+  }
+
+  return { uploadDeck, getDecks, getDeck, deleteDeck, getComments, addComment, resolveComment, deleteComment }
 }

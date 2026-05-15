@@ -8,7 +8,8 @@ const error = ref(null)
 const showUpload = ref(false)
 const search = ref('')
 
-const { getDecks } = useFirebase()
+const { getDecks, deleteDeck } = useFirebase()
+const deleting = ref(null)
 
 const filteredDecks = computed(() => {
   if (!search.value) return decks.value
@@ -36,6 +37,18 @@ onMounted(loadDecks)
 function onUploaded(deck) {
   decks.value.unshift(deck)
   showUpload.value = false
+}
+
+async function onDelete(id) {
+  deleting.value = id
+  try {
+    await deleteDeck(id)
+    decks.value = decks.value.filter(d => d.id !== id)
+  } catch (err) {
+    console.error('Failed to delete deck:', err)
+  } finally {
+    deleting.value = null
+  }
 }
 </script>
 
@@ -93,7 +106,7 @@ function onUploaded(deck) {
       </div>
 
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        <DeckCard v-for="deck in filteredDecks" :key="deck.id" :deck="deck" />
+        <DeckCard v-for="deck in filteredDecks" :key="deck.id" :deck="deck" @delete="onDelete" />
       </div>
     </main>
 
