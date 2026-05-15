@@ -72,6 +72,7 @@ onMounted(async () => {
       <iframe
         :src="deck.url"
         class="absolute inset-0 w-full h-full border-none"
+        :class="{ 'pointer-events-none': commentMode }"
         sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
       />
       <DeckComments :deck-id="deck.id" :active="commentMode" />
